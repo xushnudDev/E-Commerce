@@ -13,6 +13,7 @@ import {
   import { CreateCategoryDto } from './dtos/create-category.dtos';
   import { UpdateCategoryDto } from './dtos/update-category.dtos';
 import { GetAllCategoryDto } from './dtos/get-all-category.dtos';  
+import { ParseIntCustomPipe } from '../pipes/parse-int.pipe';
   @Controller('categories')
   export class CategoryController {
     constructor(private readonly categoryService: CategoryService) {}
@@ -33,7 +34,7 @@ import { GetAllCategoryDto } from './dtos/get-all-category.dtos';
     }
   
     @Delete(':id')
-    async deleteCategory(@Param('id', ParseIntPipe) id: number) {
+    async deleteCategory(@Param('id', ParseIntCustomPipe) id: number) {
       return await this.categoryService.deleteCategory(id);
     }
   
