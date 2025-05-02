@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
 import { PostgresService } from "src/db";
 import { ProductTableModel } from "./models";
 import { GetAllProductsDto } from "./dtos/get-all-products.dtos";
+import { UpdateProductDto } from "./dtos/update-product.dtos";
 
 @Injectable()
 export class ProductService implements OnModuleInit {
@@ -55,8 +56,8 @@ export class ProductService implements OnModuleInit {
             data: data
         }
     };
-    async updateProduct (payload: {id: number | string; name: string; price: number; category_id: number | string}) {
-        const data = await this.pg.query("update products set name = $1, price = $2, category_id = $3 where id = $4 returning *", [payload.name, payload.price, payload.category_id, payload.id]);
+    async updateProduct (id: number | string, payload: UpdateProductDto) {
+        const data = await this.pg.query("update products set name = $1, price = $2, category_id = $3 where id = $4 returning *", [payload.name, payload.price, payload.category_id, id]);
         if (data.length == 0) {
             throw new NotFoundException("Not Found");
         }
