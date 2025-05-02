@@ -1,0 +1,124 @@
+import { Injectable, NotFoundException, OnModuleInit } from "@nestjs/common";
+import { PostgresService } from "src/db";
+import { CategoryTableModel } from "./models";
+import { UpdateCategoryDto } from "./dtos/update-category.dtos";
+import { GetAllCategoryDto } from "./dtos/get-all-category.dtos";
+
+@Injectable()
+export class CategoryService implements OnModuleInit {
+    constructor(private readonly pg: PostgresService) {};
+
+    async onModuleInit() {
+       try {
+        await this.pg.query(CategoryTableModel);
+        console.log("Category Table created");
+       } catch (error) {
+        console.log("Error onModuleInit");
+        
+       }
+    }
+
+    async getAllCategories(queries: GetAllCategoryDto) {
+        let {limit = 10,page = 1,sortField = 'createdAt',sortDirection = 'asc'} = queries;
+        const offset = (page - 1) * limit;
+        const allowedFields = ['name', 'createdAt', 'updatedAt'];
+        if (!allowedFields.includes(sortField)) {
+            sortField = 'name';
+        };
+
+        const result = await this.pg.query(`
+            SELECT 
+                parent.id, 
+                parent.name, 
+                COALESCE(
+                    json_agg(DISTINCT jsonb_build_object(
+                        'id', child.id,
+                        'name', child.name
+                    )) FILTER (WHERE child.id IS NOT NULL), '[]'
+                ) AS subcategories,
+                COALESCE((
+                    SELECT json_agg(json_build_object(
+                        'id', p.id,
+                        'name', p.name,
+                        'price', p.price
+                    ))
+                    FROM products p
+                    WHERE p.category_id IN (
+                        SELECT id FROM categories WHERE category_id = parent.id
+                    )
+                ), '[]') AS products
+            FROM categories parent
+            LEFT JOIN categories child ON child.category_id = parent.id
+            LEFT JOIN products p ON p.category_id = parent.id
+            WHERE parent.category_id IS NULL
+            GROUP BY parent.id, parent.name
+            ORDER BY parent.${sortField} ${sortDirection};
+        `);
+        
+    
+        return {
+            message: "success",
+            count: result.length,
+            data: result,
+            queries
+        };
+    }
+    
+    
+    async getCategoryById(id: number | string) {
+        const categoryResult = await this.pg.query(
+            "SELECT * FROM categories WHERE id = $1",
+            [id]
+        );
+    
+        if (!categoryResult || categoryResult.length === 0) {
+            throw new NotFoundException("Category not found");
+        }
+    
+        const productsResult = await this.pg.query(
+            "SELECT * FROM products WHERE category_id = $1",
+            [id]
+        );
+    
+        return {
+            message: "success",
+            data: {
+                ...categoryResult[0], 
+                products: productsResult
+            }
+        };
+    }
+    
+    
+
+    async createCategory(payload: {name: string; category_id?: number}) {
+        const result = await this.pg.query("INSERT INTO categories (name, category_id) VALUES ($1, $2) RETURNING *", [payload.name, payload.category_id]);
+        return {
+            message: "success",
+            data: result
+        }
+    };
+
+    async deleteCategory(id: number | string) {
+        const result = await this.pg.query("DELETE FROM categories WHERE id = $1 RETURNING *", [id]);
+        return {
+            message: "success",
+            data: result
+        }
+    };
+    async updateCategory(id: number | string, data: UpdateCategoryDto) {
+        const result = await this.pg.query(
+            "UPDATE categories SET name = $1, category_id = $2 WHERE id = $3 RETURNING *",
+            [data.name, data.category_id, id]
+        );
+        if (!result || result.length == 0) {
+            throw new NotFoundException("Category not found");
+        }
+        return {
+            message: "success",
+            data: result,
+        };
+    }
+    
+
+}
