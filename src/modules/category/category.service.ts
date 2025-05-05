@@ -3,10 +3,11 @@ import { PostgresService } from "src/db";
 import { CategoryTableModel } from "./models";
 import { UpdateCategoryDto } from "./dtos/update-category.dtos";
 import { GetAllCategoryDto } from "./dtos/get-all-category.dtos";
+import { FsHelper } from "src/helpers";
 
 @Injectable()
 export class CategoryService implements OnModuleInit {
-    constructor(private readonly pg: PostgresService) {};
+    constructor(private readonly pg: PostgresService,private fs: FsHelper) {};
 
     async onModuleInit() {
        try {
@@ -91,7 +92,8 @@ export class CategoryService implements OnModuleInit {
     
     
 
-    async createCategory(payload: {name: string; category_id?: number}) {
+    async createCategory(payload: {name: string; category_id?: number},image:Express.Multer.File) {
+        const categoryImage = await this.fs.uploadFile(image);        
         const result = await this.pg.query("INSERT INTO categories (name, category_id) VALUES ($1, $2) RETURNING *", [payload.name, payload.category_id]);
         return {
             message: "success",
@@ -99,7 +101,8 @@ export class CategoryService implements OnModuleInit {
         }
     };
 
-    async deleteCategory(id: number | string) {
+    async deleteCategory(id: number | string,imageUrl: string) {
+        const categoryUrl = await this.fs.deleteFile(imageUrl)
         const result = await this.pg.query("DELETE FROM categories WHERE id = $1 RETURNING *", [id]);
         return {
             message: "success",
