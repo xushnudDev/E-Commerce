@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { ProductService } from "./product.service";
 import { GetAllProductsDto } from "./dtos/get-all-products.dtos";
 import { CreateProductDto } from "./dtos/create-product.dtos";
@@ -21,18 +21,19 @@ export class ProductController {
     }
 
     @Post()
-    @UseInterceptors(FileInterceptor('image'))
-    async createProduct(@Body() body: CreateProductDto,@UploadedFile(new CheckFileSizePipe(4 * 1024 * 1024)) image: Express.Multer.File) {
-        return await this.productService.createProduct(body,image);
+    @UseInterceptors(FileInterceptor('images'))
+    async createProduct(@Body() body: CreateProductDto,@UploadedFile(new CheckFileSizePipe(4 * 1024 * 1024)) images: Express.Multer.File[]) {
+        return await this.productService.createProduct(body,images);
     }
 
     @Put(":id")
-    async updateProduct(@Param("id") id: number | string, @Body() body: UpdateProductDto) {
-        return await this.productService.updateProduct(id,{...body});
+    @UseInterceptors(FileInterceptor('images'))
+    async updateProduct(@Param("id") id: number, @Body() body: UpdateProductDto,@UploadedFile(new CheckFileSizePipe(4 * 1024 * 1024)) images: Express.Multer.File[]) {
+        return await this.productService.updateProduct(id,{...body},images);
     }
 
     @Delete(":id")
-    async deleteProduct(@Param("id") id: number | string) {
-        return await this.productService.deleteProduct({id});
+    async deleteProduct(@Param("id",ParseIntPipe) id: number) {
+        return await this.productService.deleteProduct(id);
     }
 }

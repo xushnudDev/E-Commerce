@@ -41,7 +41,9 @@ export class CategoryService implements OnModuleInit {
                     SELECT json_agg(json_build_object(
                         'id', p.id,
                         'name', p.name,
-                        'price', p.price
+                        'price', p.price,
+                        'category_id', p.category_id,
+                        'images', p.images
                     ))
                     FROM products p
                     WHERE p.category_id IN (
@@ -106,7 +108,7 @@ export class CategoryService implements OnModuleInit {
         if (!foundedCategory) {
             throw new NotFoundException("Category not found");
         };
-        const categoryImage = foundedCategory[0].image;
+        const categoryImage = foundedCategory.image;
         if(categoryImage) {
             await this.fs.deleteFile(categoryImage);
         }
@@ -122,7 +124,7 @@ export class CategoryService implements OnModuleInit {
             throw new NotFoundException("Category not found");
         };
 
-        let imageUrl = foundedCategory[0].image;
+        let imageUrl = foundedCategory.image;
 
         if(image) {
             if(imageUrl) {
