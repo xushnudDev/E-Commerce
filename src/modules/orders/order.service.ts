@@ -18,33 +18,35 @@ export class OrderService implements OnModuleInit {
     };
 
     async getAllOrders() {
-        const orders = await this.pg.query(`SELECT 
-            users.id AS user_id,
-            users.name AS user_name,
-            JSON_AGG(
-              JSON_BUILD_OBJECT(
-                'product_id', products.id,
-                'product_name', products.name,
-                'product_images',products.images,
-                'orders', JSON_BUILD_OBJECT(
-                    'order_id', orders.id,
-                    'count', orders.count
-                )
-              )
-            ) AS products
-          FROM users
-          JOIN orders ON users.id = orders.user_id
-          JOIN products ON orders.product_id = products.id
-          GROUP BY users.id, users.name;
-          
-          `)
+        const orders = await this.pg.query(`
+            SELECT 
+    users.id AS user_id,
+    users.fullname AS user_name,
+    JSON_AGG(
+      JSON_BUILD_OBJECT(
+        'product_id', products.id,
+        'product_name', products.name,
+        'product_images', products.images,
+        'order_info', JSON_BUILD_OBJECT(
+            'order_id', o.id,
+            'count', o.count
+        )
+      )
+    ) AS products
+FROM users
+JOIN orders o ON users.id = o.user_id
+JOIN products ON o.product_id = products.id
+GROUP BY users.id, users.fullname;
 
+        `);
+    
         return {
             message: "success",
             count: orders.length,
             data: orders
-        }
-    };
+        };
+    }
+    
 
     async createOrder(payload: ICreateOrder) {
         const product = await this.pg.query("SELECT * FROM products WHERE id = $1",[payload.product_id])

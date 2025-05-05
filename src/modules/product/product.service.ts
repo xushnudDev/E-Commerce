@@ -67,7 +67,7 @@ export class ProductService implements OnModuleInit {
         const product = await this.pg.query(
             `INSERT INTO products(name, price, category_id, images) 
              VALUES ($1, $2, $3, $4) RETURNING *`,
-            [payload.name, payload.price, payload.category_id, JSON.stringify(imageUrls)]
+            [payload.name, payload.price, payload.category_id, imageUrls]
         );
     
         return {

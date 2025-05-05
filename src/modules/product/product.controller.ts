@@ -1,9 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFile, UploadedFiles, UseInterceptors } from "@nestjs/common";
 import { ProductService } from "./product.service";
 import { GetAllProductsDto } from "./dtos/get-all-products.dtos";
 import { CreateProductDto } from "./dtos/create-product.dtos";
 import { UpdateProductDto } from "./dtos/update-product.dtos";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { FilesInterceptor } from "@nestjs/platform-express";
 import { CheckFileSizePipe } from "../pipes/check-file-size.pipe";
 
 @Controller("products")
@@ -21,14 +21,14 @@ export class ProductController {
     }
 
     @Post()
-    @UseInterceptors(FileInterceptor('images'))
-    async createProduct(@Body() body: CreateProductDto,@UploadedFile(new CheckFileSizePipe(4 * 1024 * 1024)) images: Express.Multer.File[]) {
+    @UseInterceptors(FilesInterceptor('images'))
+    async createProduct(@Body() body: CreateProductDto,@UploadedFiles(new CheckFileSizePipe(4 * 1024 * 1024)) images: Express.Multer.File[]) {
         return await this.productService.createProduct(body,images);
     }
 
     @Put(":id")
-    @UseInterceptors(FileInterceptor('images'))
-    async updateProduct(@Param("id") id: number, @Body() body: UpdateProductDto,@UploadedFile(new CheckFileSizePipe(4 * 1024 * 1024)) images: Express.Multer.File[]) {
+    @UseInterceptors(FilesInterceptor('images'))
+    async updateProduct(@Param("id") id: number, @Body() body: UpdateProductDto,@UploadedFiles(new CheckFileSizePipe(4 * 1024 * 1024)) images: Express.Multer.File[]) {
         return await this.productService.updateProduct(id,{...body},images);
     }
 
