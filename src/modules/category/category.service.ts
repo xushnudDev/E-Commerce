@@ -94,33 +94,48 @@ export class CategoryService implements OnModuleInit {
 
     async createCategory(payload: {name: string; category_id?: number},image:Express.Multer.File) {
         const categoryImage = await this.fs.uploadFile(image);        
-        const result = await this.pg.query("INSERT INTO categories (name, category_id) VALUES ($1, $2) RETURNING *", [payload.name, payload.category_id]);
+        const result = await this.pg.query("INSERT INTO categories (name, category_id,image) VALUES ($1, $2,$3) RETURNING *", [payload.name, payload.category_id,categoryImage.fileUrl]);
         return {
             message: "success",
             data: result
         }
     };
 
-    async deleteCategory(id: number | string,imageUrl: string) {
-        const categoryUrl = await this.fs.deleteFile(imageUrl)
-        const result = await this.pg.query("DELETE FROM categories WHERE id = $1 RETURNING *", [id]);
+    async deleteCategory(id: number | string) {
+        const foundedCategory = await this.pg.query("SELECT * FROM categories WHERE id = $1", [id]);
+        if (!foundedCategory) {
+            throw new NotFoundException("Category not found");
+        };
+        const categoryImage = foundedCategory[0].image;
+        if(categoryImage) {
+            await this.fs.deleteFile(categoryImage);
+        }
+        const category = await this.pg.query("DELETE FROM categories WHERE id = $1 RETURNING *", [id]);
+        return {
+            message: "success",
+            data: category
+        }
+    };
+    async updateCategory(id: number | string, data: UpdateCategoryDto,image:Express.Multer.File) {
+        const foundedCategory = await this.pg.query("SELECT * FROM categories WHERE id = $1", [id]);
+        if (!foundedCategory) {
+            throw new NotFoundException("Category not found");
+        };
+
+        let imageUrl = foundedCategory[0].image;
+
+        if(image) {
+            if(imageUrl) {
+                await this.fs.deleteFile(imageUrl);
+            };
+            const uploadedImage = await this.fs.uploadFile(image);
+            imageUrl = uploadedImage.fileUrl;
+        };
+        const result = await this.pg.query("UPDATE categories SET name = $1, category_id = $2, image = $3 WHERE id = $4 RETURNING *", [data.name, data.category_id, imageUrl, id]);
         return {
             message: "success",
             data: result
         }
-    };
-    async updateCategory(id: number | string, data: UpdateCategoryDto) {
-        const result = await this.pg.query(
-            "UPDATE categories SET name = $1, category_id = $2 WHERE id = $3 RETURNING *",
-            [data.name, data.category_id, id]
-        );
-        if (!result || result.length == 0) {
-            throw new NotFoundException("Category not found");
-        }
-        return {
-            message: "success",
-            data: result,
-        };
     }
     
 

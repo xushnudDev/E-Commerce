@@ -39,17 +39,19 @@ import { CheckFileSizePipe } from '../pipes/check-file-size.pipe';
       return await this.categoryService.createCategory(body,image);
     }
   
-    @Delete(':id/image')
-    async deleteCategory(@Param('id', ParseIntCustomPipe) id: number,imageUrl:string) {
-      return await this.categoryService.deleteCategory(id,imageUrl);
+    @Delete(':id')
+    async deleteCategory(@Param('id', ParseIntCustomPipe) id: number) {
+      return await this.categoryService.deleteCategory(id);
     }
   
     @Put(':id')
+    @UseInterceptors(FileInterceptor('image'))
     async updateCategory(
       @Param('id', ParseIntPipe) id: number,
       @Body() data: UpdateCategoryDto,
+      @UploadedFile(new CheckFileSizePipe(2 * 1024 * 1024)) image: Express.Multer.File
     ) {
-      return await this.categoryService.updateCategory(id, data);
+      return await this.categoryService.updateCategory(id, data, image);
     }
   }
   

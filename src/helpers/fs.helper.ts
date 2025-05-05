@@ -16,17 +16,20 @@ export class FsHelper {
 
         await fsPromises.writeFile(path.join(fileFolder, fileName), file.buffer);
         return {
-            message: "File uploaded successfully",
-            fileUrl: path.join(fileFolder, fileName)
+            message: "success",
+            fileUrl: path.join('uploads', fileName)
         }
     };
     async deleteFile(fileUrl: string) {
-        const fileFolder = path.join(process.cwd(), "uploads");
-        const fileName = path.basename(fileUrl);
-        await fsPromises.unlink(path.join(fileFolder, fileName));
-        return {
-            message: "File deleted successfully"
-
+        const fileFolder = path.join(process.cwd(), fileUrl);
+        try {
+            if(fs.existsSync(fileFolder)) {
+               await fsPromises.unlink(fileFolder); 
+            } else {
+                throw new Error("File not found");
+            }
+        } catch (error) {
+            console.log("Error deleting file:", error);
         }
     };
 }
