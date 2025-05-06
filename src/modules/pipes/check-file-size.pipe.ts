@@ -1,4 +1,3 @@
-// check-file-size.pipe.ts
 import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
 
 @Injectable()
